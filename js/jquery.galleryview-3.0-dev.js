@@ -5,6 +5,20 @@
 	Version:	3.0 DEVELOPMENT
 
   	See README.txt for instructions on how to markup your HTML
+  	
+  	
+  	Customized: T.Morimoto
+  	Date: 2013.03.27
+  	Description: 外部リンクの設置を可能とするカスタマイズ版
+
+  		例：
+  		<ul id="myGallery">
+  			<li><a href="http://yahoo.co.jp"><img src="path/to/img.jpg" alt="" /></a></li>
+  			<li><a href="http://yahoo.co.jp"><img src="path/to/img.jpg" alt="" /></a></li>
+  			<li><a href="http://yahoo.co.jp"><img src="path/to/img.jpg" alt="" /></a></li>
+  		</ul>
+  		
+  		のようなコードを可能とする。
 */
 
 // Make sure Object.create is available in the browser (for our prototypal inheritance)
@@ -35,7 +49,10 @@ if (typeof Object.create !== 'function') {
 			title: img.attr('title') || img.attr('alt'),
 			description: img.data('description')
 		};
-		this.href = null;
+//		リンク先の保持
+//		this.href = null;
+		this.href = img.parent('a').attr('href') || null;
+		
 		this.dom_obj = null;
 		
 		return this;
@@ -155,7 +172,11 @@ if (typeof Object.create !== 'function') {
 		// create gvImage objects for each image in gallery
 		storeImages: function() {
 			var self = this;
-			this.sourceImgs = $('li>img',this.$el);
+			
+			//aが入るとsourceImgsにならないので > はなしで
+			//this.sourceImgs = $('li>img',this.$el);
+			this.sourceImgs = $('li img',this.$el);
+
 			this.numImages = this.sourceImgs.length;
 			this.gvImages = [];
 			this.sourceImgs.each(function(i,img) {
@@ -497,6 +518,12 @@ if (typeof Object.create !== 'function') {
 						parent.prependTo(dom.gv_panelWrap);
 						parent.removeClass('gv_panel-loading');
 						_img.fadeIn();
+					
+					//1枚目の画像にリンクを貼る処理
+					if(_img.attr('data-link')){
+						_img.wrap('<a href="' + _img.attr('data-link') + '"></a>');
+					}
+
 						self.showInfoBar();
 					} else {
 						parent.removeClass('gv_panel-loading');
@@ -510,7 +537,11 @@ if (typeof Object.create !== 'function') {
 					img.clone(true)
 						.data('parent',{type:'gv_panels',index:i})
 						.appendTo(dom.gv_imageStore)
-						.attr('src',gvImage.src.panel);
+						
+						//data属性でリンク先を保持させるチェーン追加
+						//.attr('src',gvImage.src.panel);
+						.attr('src',gvImage.src.panel).attr('data-link',gvImage.href);
+
 				}
 				
 				if(self.opts.show_filmstrip) {
@@ -585,10 +616,22 @@ if (typeof Object.create !== 'function') {
 				case 'crossfade':
 					dom.gv_panels.eq(this.iterator).fadeOut(this.opts.transition_speed,function(){$(this).remove();});
 					panel.hide().prependTo(dom.gv_panelWrap).fadeIn(this.opts.transition_speed);
+					
+					//data属性を保持しているならaタグで囲う（必要ならハードコーディングでtarget付加するとよい）
+					if(panel.children().attr('data-link')){
+						panel.children().wrap('<a href="' + panel.children().attr('data-link') + '"></a>');
+					}
+
 					break;
 				case 'fade':
 					dom.gv_panels.eq(this.iterator).remove();
 					panel.hide().prependTo(dom.gv_panelWrap).fadeIn(this.opts.transition_speed);
+
+					//data属性を保持しているならaタグで囲う（必要ならハードコーディングでtarget付加するとよい）
+					if(panel.children().attr('data-link')){
+						panel.children().wrap('<a href="' + panel.children().attr('data-link') + '"></a>');
+					}
+
 					break;
 				case 'slide':
 					if(this.navAction === 'next' || (this.navAction === 'frame' && frame_i > this.iterator)) {
@@ -608,10 +651,22 @@ if (typeof Object.create !== 'function') {
 						{ left: oldPanelEnd },
 						{ duration: this.opts.transition_speed, easing: this.opts.easing, complete: function(){ $(this).remove(); } }
 					);
+
+					//data属性を保持しているならaタグで囲う（必要ならハードコーディングでtarget付加するとよい）
+					if(panel.children().attr('data-link')){
+						panel.children().wrap('<a href="' + panel.children().attr('data-link') + '"></a>');
+					}
+
 					break;
 				default:
 					dom.gv_panels.eq(this.iterator).remove();
 					panel.prependTo(dom.gv_panelWrap);
+
+					//data属性を保持しているならaタグで囲う（必要ならハードコーディングでtarget付加するとよい）
+					if(panel.children().attr('data-link')){
+						panel.children().wrap('<a href="' + panel.children().attr('data-link') + '"></a>');
+					}
+
 					break;
 			}
 			
